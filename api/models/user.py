@@ -1,6 +1,9 @@
 from api.models import db
 
 
+
+
+
 class SysUser(db.Model):
     __tablename__ = 'sys_user'
 

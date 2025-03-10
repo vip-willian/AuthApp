@@ -1,4 +1,4 @@
-from api.models import db
+from models import db
 
 
 class SysOrganization(db.Model):

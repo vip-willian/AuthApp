@@ -3,6 +3,7 @@ from pydantic_settings import BaseSettings
 from pydantic import Field, NonNegativeInt, computed_field
 from typing import Any
 from urllib.parse import quote_plus
+from .redis_config import RedisConfig
 
 
 class DatabaseConfig(BaseSettings):
@@ -104,5 +105,5 @@ class DatabaseConfig(BaseSettings):
         }
 
 
-class MiddlewareConfig(DatabaseConfig):
+class MiddlewareConfig(DatabaseConfig, RedisConfig):
     pass
