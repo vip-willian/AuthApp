@@ -94,7 +94,9 @@ const handleSubmit = async () => {
     let access_token = response.data.access_token;
     localStorage.setItem("access_token", access_token)
     // 登录成功处理
-    router.push('/home')
+    await router.push({
+      path: '/home'
+    })
   } catch (error) {
     alert(error)
     alert('登录失败，请检查用户名和密码')

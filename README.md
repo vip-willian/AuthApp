@@ -30,3 +30,5 @@ flask db upgrade
 
 最后执行db-init.sql
 
+awk -v key="$(openssl rand -base64 42)" '/^SECRET_KEY=/ {sub(/=.*/, "=" key)} 1' .env > temp_env && mv temp_env .env
+

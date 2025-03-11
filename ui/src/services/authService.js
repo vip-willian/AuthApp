@@ -34,7 +34,7 @@ const axiosInstance = axios.create();
 setHeaders(axiosInstance);
 
 const getCurrentLoginUser = async () => {
-    const response = await axios.get(`${API_URL}/api/user/current`)
+    const response = await axiosInstance.get(`${API_URL}/api/user/current`)
     return response.data;
 }
 

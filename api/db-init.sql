@@ -312,5 +312,5 @@ VALUES (1899323663447101440, 1899326131962777600),
 insert into account(id, name, email, phone, password, password_salt, avatar, interface_language, interface_theme,
                     timezone, last_login_at, last_login_ip, last_active_at, status, initialized_at, created_time,
                     updated_time)
-values (1899323663447101440, 'admin', 'admin@gmail.com', '15907554567', 'ZjI3MWIyYjNhZmY0ZTBmOGI1MTc2OGU1NzcwZmQ2Mzk2OTMyZDA3ZjhiZDczYTNjODJlMGI4ZDQyN2UxMmNhMw==', 'w4ONnSZiD0E+KaHJuP9xYw==', '', '', '', null, null, null, now(), 'active', now(), now(),
+values (1899323663447101440, 'admin', 'admin@gmail.com', '15907554567', 'MmYxNWIzYWUwNTQ1Y2RjOTI5YWI0MDQwOGI1OWIzNjA0MTVhN2FmYWMxMTk5NTNkNmE3YTFlNjYzYTQ5ODg5Mw==', 'EmBpjvecLSCMisBjigCRww==', '', '', '', null, null, null, now(), 'active', now(), now(),
         now());

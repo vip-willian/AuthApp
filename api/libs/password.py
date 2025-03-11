@@ -3,16 +3,14 @@ import binascii
 import hashlib
 import re
 
-# password_pattern = r"^(?=.*[a-zA-Z])(?=.*\d).{5,}$"
-password_pattern = r"^[1-9]{5,}$"
-
+password_pattern = r"^(?=.*[a-zA-Z])(?=.*\d).{8,}$"
 
 def valid_password(password):
     pattern = password_pattern
 
     if re.match(pattern, password) is not None:
         return password
-    raise ValueError("Password must contain letters and numbers, and the length must be greater than 5.")
+    raise ValueError("Password must contain letters and numbers, and the length must be greater than 8.")
 
 
 def hash_password(password_str, salt_byte):
