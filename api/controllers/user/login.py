@@ -1,13 +1,13 @@
 import flask_login
 from flask_restful import Resource, reqparse, request
-from api.libs.field_validate import email
-from api.libs.password import valid_password
-from api.services.account_service import AccountService
-from api.services.errors.account import *
-from api.libs.helper import extract_remote_ip
+from libs.field_validate import email
+from libs.password import valid_password
+from services.account_service import AccountService
+from services.errors.account import *
+from libs.helper import extract_remote_ip
 from typing import cast
-from api.models.account import Account
-from api.controllers.error import AccountBannedError, EmailOrPasswordMismatchError, AccountNotFound
+from models.account import Account
+from controllers.error import AccountBannedError, EmailOrPasswordMismatchError, AccountNotFound
 
 
 class LoginApi(Resource):

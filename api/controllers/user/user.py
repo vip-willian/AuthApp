@@ -1,6 +1,6 @@
 from flask import jsonify
 from flask_restful import Resource, reqparse, inputs, marshal, fields
-from api.libs.field_validate import field_len_limit
+from libs.field_validate import field_len_limit
 
 
 class GetUserList(Resource):

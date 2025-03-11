@@ -1,6 +1,6 @@
 import jwt
 from werkzeug.exceptions import Unauthorized
-from api.configs import auth_config
+from configs import auth_config
 
 class PassportService:
     def __init__(self):

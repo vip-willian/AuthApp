@@ -3,7 +3,7 @@ from flask import Blueprint
 
 from .user import GetUserList, GetUserById, UserRegister
 from .login import LoginApi, LogoutApi, RefreshTokenApi
-from api.libs.external_api import ExternalApi
+from libs.external_api import ExternalApi
 
 user_bp = Blueprint('user', __name__, url_prefix='/user/api')
 api = ExternalApi(user_bp)

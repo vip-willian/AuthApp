@@ -1,5 +1,5 @@
-from api.auth_app import AuthApp
-from api.controllers.user import user_bp
+from auth_app import AuthApp
+from controllers.user import user_bp
 
 
 def init_app(app: AuthApp):

@@ -47,7 +47,7 @@ class DatabaseConfig(BaseSettings):
 
     SQLALCHEMY_DATABASE_URI_SCHEME: str = Field(
         description="Database URI scheme for SQLAlchemy connection.",
-        default="mysql",
+        default="mysql+pymysql",
     )
 
     # 组装数据库连接配置
@@ -101,7 +101,7 @@ class DatabaseConfig(BaseSettings):
             "max_overflow": self.SQLALCHEMY_MAX_OVERFLOW,
             "pool_recycle": self.SQLALCHEMY_POOL_RECYCLE,
             "pool_pre_ping": self.SQLALCHEMY_POOL_PRE_PING,
-            "connect_args": {"options": "-c timezone=UTC"},
+            # "connect_args": {"options": "-c timezone=UTC"},
         }
 
 

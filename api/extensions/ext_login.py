@@ -3,12 +3,12 @@ import json
 import flask_login
 from flask import request, Response
 from flask_login import user_logged_in, user_loaded_from_request
-from api.contexts import tenant_id
-from api.auth_app import AuthApp
+from contexts import tenant_id
+from auth_app import AuthApp
 from werkzeug.exceptions import Unauthorized
 
-from api.libs.passport import PassportService
-from api.services.account_service import AccountService
+from libs.passport import PassportService
+from services.account_service import AccountService
 
 login_manager = flask_login.LoginManager()
 

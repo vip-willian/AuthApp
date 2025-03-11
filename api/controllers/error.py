@@ -1,4 +1,4 @@
-from api.libs.exception import BaseHTTPException
+from libs.exception import BaseHTTPException
 
 
 class AccountBannedError(BaseHTTPException):

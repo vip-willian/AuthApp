@@ -4,13 +4,13 @@ import secrets
 from pydantic import BaseModel
 from typing import cast, Optional
 from datetime import UTC, datetime, timedelta
-from api.configs import auth_config
-from api.libs.passport import PassportService
-from api.models.account import Account, AccountStatus
-from api.models import db
+from configs import auth_config
+from libs.passport import PassportService
+from models.account import Account, AccountStatus
+from models import db
 from .errors.account import AccountNotFoundError, AccountLoginError, AccountPasswordError
-from api.libs.password import hash_password, compare_password
-from api.extensions.ext_redis import redis_client
+from libs.password import hash_password, compare_password
+from extensions.ext_redis import redis_client
 from werkzeug.exceptions import Unauthorized
 
 

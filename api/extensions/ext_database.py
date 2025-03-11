@@ -1,5 +1,5 @@
-from api.auth_app import AuthApp
-from api.models import db
+from auth_app import AuthApp
+from models import db
 
 
 def init_app(app: AuthApp):

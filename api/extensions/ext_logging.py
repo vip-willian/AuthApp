@@ -3,8 +3,8 @@ import os
 import sys
 import uuid
 import flask
-from api.auth_app import AuthApp
-from api.configs import auth_config
+from auth_app import AuthApp
+from configs import auth_config
 from logging.handlers import RotatingFileHandler
 
 

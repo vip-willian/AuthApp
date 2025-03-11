@@ -12,7 +12,7 @@ def create_app_with_config() -> AuthApp:
 
 
 def initialize_extensions(app: AuthApp):
-    from api.extensions import ext_blueprints, ext_database
+    from extensions import ext_blueprints, ext_database
 
     extensions = [
         ext_blueprints,

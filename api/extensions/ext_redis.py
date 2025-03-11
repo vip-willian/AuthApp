@@ -5,8 +5,8 @@ from redis.cluster import ClusterNode, RedisCluster
 from redis.sentinel import Sentinel
 from redis.cluster import ClusterNode
 from redis.connection import Connection, SSLConnection
-from api.auth_app import AuthApp
-from api.configs import auth_config
+from auth_app import AuthApp
+from configs import auth_config
 
 
 class RedisClientWrapper:
