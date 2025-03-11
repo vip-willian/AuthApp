@@ -12,11 +12,12 @@ def create_app_with_config() -> AuthApp:
 
 
 def initialize_extensions(app: AuthApp):
-    from extensions import ext_blueprints, ext_database
+    from extensions import ext_blueprints, ext_database, ext_redis
 
     extensions = [
         ext_blueprints,
-        ext_database
+        ext_database,
+        ext_redis
     ]
 
     for ext in extensions:
@@ -43,12 +44,12 @@ def create_app() -> AuthApp:
         logging.info(f"Finished create_app ({round((end_time - start_time) * 1000, 2)} ms)")
     return app
 
+
 def create_migrations_app() -> AuthApp:
     app = create_app_with_config()
-    from extensions import ext_database,ext_migrate
+    from extensions import ext_database, ext_migrate
 
     # Initialize only required extensions
     ext_database.init_app(app)
     ext_migrate.init_app(app)
     return app
-

@@ -1,15 +1,34 @@
-from typing import Union, Any
+from typing import Any, Union
 
 import redis
 from redis.cluster import ClusterNode, RedisCluster
-from redis.sentinel import Sentinel
-from redis.cluster import ClusterNode
 from redis.connection import Connection, SSLConnection
-from auth_app import AuthApp
+from redis.sentinel import Sentinel
+
 from configs import auth_config
+from auth_app import AuthApp
 
 
 class RedisClientWrapper:
+    """
+    A wrapper class for the Redis client that addresses the issue where the global
+    `redis_client` variable cannot be updated when a new Redis instance is returned
+    by Sentinel.
+
+    This class allows for deferred initialization of the Redis client, enabling the
+    client to be re-initialized with a new instance when necessary. This is particularly
+    useful in scenarios where the Redis instance may change dynamically, such as during
+    a failover in a Sentinel-managed Redis setup.
+
+    Attributes:
+        _client (redis.Redis): The actual Redis client instance. It remains None until
+                               initialized with the `initialize` method.
+
+    Methods:
+        initialize(client): Initializes the Redis client if it hasn't been initialized already.
+        __getattr__(item): Delegates attribute access to the Redis client, raising an error
+                           if the client is not initialized.
+    """
 
     def __init__(self):
         self._client = None
@@ -19,12 +38,13 @@ class RedisClientWrapper:
             self._client = client
 
     def __getattr__(self, item):
-        if self.client is None:
+        if self._client is None:
             raise RuntimeError("Redis client is not initialized. Call init_app first.")
         return getattr(self._client, item)
 
 
 redis_client = RedisClientWrapper()
+
 
 def init_app(app: AuthApp):
     global redis_client
@@ -34,64 +54,46 @@ def init_app(app: AuthApp):
 
     redis_params: dict[str, Any] = {
         "username": auth_config.REDIS_USERNAME,
-        "password": auth_config.REDIS_PASSWORD or None,
+        "password": auth_config.REDIS_PASSWORD or None,  # Temporary fix for empty password
         "db": auth_config.REDIS_DB,
         "encoding": "utf-8",
         "encoding_errors": "strict",
         "decode_responses": False,
     }
 
-    # 哨兵模式
     if auth_config.REDIS_USE_SENTINEL:
-        master = get_client_of_sentinel(redis_params)
+        assert auth_config.REDIS_SENTINELS is not None, "REDIS_SENTINELS must be set when REDIS_USE_SENTINEL is True"
+        sentinel_hosts = [
+            (node.split(":")[0], int(node.split(":")[1])) for node in auth_config.REDIS_SENTINELS.split(",")
+        ]
+        sentinel = Sentinel(
+            sentinel_hosts,
+            sentinel_kwargs={
+                "socket_timeout": auth_config.REDIS_SENTINEL_SOCKET_TIMEOUT,
+                "username": auth_config.REDIS_SENTINEL_USERNAME,
+                "password": auth_config.REDIS_SENTINEL_PASSWORD,
+            },
+        )
+        master = sentinel.master_for(auth_config.REDIS_SENTINEL_SERVICE_NAME, **redis_params)
         redis_client.initialize(master)
-    # 集群模式
     elif auth_config.REDIS_USE_CLUSTERS:
-        cluster = get_client_of_cluster()
-        redis_client.initialize(cluster)
-    # 单机模式
+        assert auth_config.REDIS_CLUSTERS is not None, "REDIS_CLUSTERS must be set when REDIS_USE_CLUSTERS is True"
+        nodes = [
+            ClusterNode(host=node.split(":")[0], port=int(node.split(":")[1]))
+            for node in auth_config.REDIS_CLUSTERS.split(",")
+        ]
+        # FIXME: mypy error here, try to figure out how to fix it
+        redis_client.initialize(
+            RedisCluster(startup_nodes=nodes, password=dify_config.REDIS_CLUSTERS_PASSWORD))  # type: ignore
     else:
-        single = get_client_of_single(connection_class, redis_params)
-        redis_client.initialize(single)
+        redis_params.update(
+            {
+                "host": auth_config.REDIS_HOST,
+                "port": auth_config.REDIS_PORT,
+                "connection_class": connection_class,
+            }
+        )
+        pool = redis.ConnectionPool(**redis_params)
+        redis_client.initialize(redis.Redis(connection_pool=pool))
 
     app.extensions["redis"] = redis_client
-
-
-def get_client_of_single(connection_class, redis_params):
-    redis_params.update(
-        {
-            "host": auth_config.REDIS_HOST,
-            "port": auth_config.REDIS_PORT,
-            "connection_class": connection_class,
-        }
-    )
-    pool = redis.ConnectionPool(**redis_params)
-    single = redis.Redis(connection_pool=pool)
-    return single
-
-
-def get_client_of_cluster():
-    assert auth_config.REDIS_CLUSTERS is not None, "REDIS_CLUSTERS must be set when REDIS_USE_CLUSTERS is True"
-    nodes = [
-        ClusterNode(host=node.split(":")[0], port=int(node.split(":")[1])) for node in
-        auth_config.REDIS_CLUSTERS.split(',')
-    ]
-    cluster = RedisCluster(startup_nodes=nodes, password=auth_config.REDIS_CLUSTERS_PASSWORD)
-    return cluster
-
-
-def get_client_of_sentinel(redis_params):
-    assert auth_config.REDIS_SENTINELS is not None, "REDIS_SENTINELS must be set when REDIS_USE_SENTINEL is True"
-    sentinel_hosts = [
-        (node.split(":")[0], int(node.split(":")[1])) for node in auth_config.REDIS_SENTINELS.split(",")
-    ]
-    sentinel = Sentinel(
-        sentinel_hosts,
-        sentinel_kwargs={
-            "socket_timeout": auth_config.REDIS_SENTINEL_SOCKET_TIMEOUT,
-            "username": auth_config.REDIS_SENTINEL_USERNAME,
-            "password": auth_config.REDIS_SENTINEL_PASSWORD,
-        },
-    )
-    master = sentinel.master_for(auth_config.REDIS_SENTINEL_SERVICE_NAME, **redis_params)
-    return master

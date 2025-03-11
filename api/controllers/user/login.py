@@ -1,5 +1,5 @@
 import flask_login
-from flask_restful import Resource, reqparse, request
+from flask_restful import Resource, reqparse, request, marshal_with
 from libs.field_validate import email
 from libs.password import valid_password
 from services.account_service import AccountService
@@ -8,6 +8,7 @@ from libs.helper import extract_remote_ip
 from typing import cast
 from models.account import Account
 from controllers.error import AccountBannedError, EmailOrPasswordMismatchError, AccountNotFound
+from fields.login_field import current_user_detail_fields
 
 
 class LoginApi(Resource):
@@ -17,7 +18,7 @@ class LoginApi(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument("email", type=email, required=True, location="json")
         parser.add_argument("password", type=valid_password, required=True, location="json")
-        parser.add_argument("remember_me", type=bool, required=False, location="json")
+        # parser.add_argument("remember_me", type=bool, required=False, location="json")
 
         args = parser.parse_args()
 
@@ -32,7 +33,7 @@ class LoginApi(Resource):
             raise AccountNotFound()
         # 执行登录，生成访问Token
         token_pair = AccountService.login(account=account, ip_address=extract_remote_ip(request))
-        return {"result": "success", "data": token_pair.model_dump()}
+        return {"status": 200, "result": "success", "data": token_pair.model_dump()}
 
 
 class LogoutApi(Resource):
@@ -57,3 +58,10 @@ class RefreshTokenApi(Resource):
             return {"result": "success", "data": new_token_pair.model_dump()}
         except Exception as e:
             return {"result": "fail", "data": str(e)}, 401
+
+
+class GetCurrentLoginUser(Resource):
+    @marshal_with(current_user_detail_fields)
+    def get(self):
+        account = cast(Account, flask_login.current_user)
+        return account

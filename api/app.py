@@ -1,4 +1,5 @@
 import sys
+from flask_cors import CORS
 
 
 def is_db_command():
@@ -17,4 +18,5 @@ else:
     app = create_app()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5002)
+    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    app.run(host='0.0.0.0', port=5002, debug=False)
