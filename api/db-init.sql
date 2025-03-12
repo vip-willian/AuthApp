@@ -9,15 +9,8 @@
 CREATE DATABASE IF NOT EXISTS `db_auth`;
 USE `db_auth`;
 
-INSERT INTO db_auth.account (id, name, email, phone, password, password_salt, avatar, interface_language,
-                             interface_theme, timezone, last_login_at, last_login_ip, last_active_at, status,
-                             initialized_at, created_time, updated_time)
-VALUES (1899323663447101440, 'admin', 'admin@gmail.com', '15907554567',
-        'MmYxNWIzYWUwNTQ1Y2RjOTI5YWI0MDQwOGI1OWIzNjA0MTVhN2FmYWMxMTk5NTNkNmE3YTFlNjYzYTQ5ODg5Mw==',
-        'EmBpjvecLSCMisBjigCRww==', '', '', '', null, '2025-03-12 05:48:52', '127.0.0.1', '2025-03-12 12:53:00',
-        'active', '2025-03-12 12:53:00', '2025-03-12 12:53:00', '2025-03-12 12:53:00');
 
-# 初始化用户数据
+-- 初始化用户数据
 INSERT INTO db_auth.sys_user (id, username, alias, password, password_salt, phone, email, avatar, sex, age, tenant_code,
                               org_id, dept_id, is_superuser, last_login_at, last_login_ip, last_active_at, user_status,
                               created_time, updated_time)
@@ -26,13 +19,13 @@ VALUES (1, 'admin', 'admin', 'ZjgwNmQ4ODkwYmVmYjAzZDUxZGNiOGIyZjRiNjA4YzUwZTlmN2
         'https://avatars.githubusercontent.com/u/54677442?v=4', 1, 10, '0', 0, 0, 1, null, null, '2025-03-12 15:30:58',
         'active', '2025-03-12 15:30:58', '2025-03-12 15:30:58');
 
-# 初始化角色数据
+-- 初始化角色数据
 INSERT INTO db_auth.sys_role (id, name, `desc`, created_time, updated_time)
 VALUES (1, '管理员', '管理员角色', '2025-03-12 15:48:22', '2025-03-12 15:48:22');
 INSERT INTO db_auth.sys_role (id, name, `desc`, created_time, updated_time)
 VALUES (2, '普通用户', '普通用户角色', '2025-03-12 15:48:22', '2025-03-12 15:48:22');
 
-# 初始化菜单数据
+-- 初始化菜单数据
 INSERT INTO db_auth.sys_menu (id, parent_id, name, menu_type, icon, path, `order`, remark, is_hidden, component,
                               keepalive, redirect, created_time, updated_time)
 VALUES (1, 0, '系统管理', 'MENU', 'carbon:gui-management', '/system', 1, null, 0, 'Layout', 0, '/system/user',
@@ -58,11 +51,11 @@ INSERT INTO db_auth.sys_menu (id, parent_id, name, menu_type, icon, path, `order
 VALUES (6, 1, '部门管理', 'MENU', 'mingcute:department-line', 'dept', 4, null, 0, '/system/dept', 0, null,
         '2025-03-12 15:53:34', '2025-03-12 15:53:34');
 
-# 初始化用户角色数据
+-- 初始化用户角色数据
 INSERT INTO db_auth.sys_user_role (id, user_id, role_id, created_time, updated_time)
 VALUES (1, 1, 1, '2025-03-12 15:57:13', '2025-03-12 15:57:13');
 
-# 初始化角色菜单数据
+-- 初始化角色菜单数据
 INSERT INTO db_auth.sys_role_menu (id, role_id, menu_id, created_time, updated_time)
 VALUES (1, 1, 1, '2025-03-12 15:56:31', '2025-03-12 15:56:31');
 INSERT INTO db_auth.sys_role_menu (id, role_id, menu_id, created_time, updated_time)

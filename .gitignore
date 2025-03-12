@@ -1,4 +1,3 @@
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -9,7 +8,6 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-build/
 develop-eggs/
 dist/
 downloads/
@@ -102,10 +100,8 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
-/*.pyc
-*.pyc
-
 # Environments
+.env
 .venv
 env/
 venv/
@@ -147,6 +143,51 @@ api/.idea
 api/.env
 api/storage/*
 
+docker-legacy/volumes/app/storage/*
+docker-legacy/volumes/db/data/*
+docker-legacy/volumes/redis/data/*
+docker-legacy/volumes/weaviate/*
+docker-legacy/volumes/qdrant/*
+docker-legacy/volumes/etcd/*
+docker-legacy/volumes/minio/*
+docker-legacy/volumes/milvus/*
+docker-legacy/volumes/chroma/*
+docker-legacy/volumes/opensearch/data/*
+docker-legacy/volumes/pgvectors/data/*
+docker-legacy/volumes/pgvector/data/*
+
+docker/volumes/app/storage/*
+docker/volumes/certbot/*
+docker/volumes/db/data/*
+docker/volumes/redis/data/*
+docker/volumes/weaviate/*
+docker/volumes/qdrant/*
+docker/tidb/volumes/*
+docker/volumes/etcd/*
+docker/volumes/minio/*
+docker/volumes/milvus/*
+docker/volumes/chroma/*
+docker/volumes/opensearch/data/*
+docker/volumes/myscale/data/*
+docker/volumes/myscale/log/*
+docker/volumes/unstructured/*
+docker/volumes/pgvector/data/*
+docker/volumes/pgvecto_rs/data/*
+docker/volumes/couchbase/*
+docker/volumes/oceanbase/*
+docker/volumes/plugin_daemon/*
+!docker/volumes/oceanbase/init.d
+
+docker/nginx/conf.d/default.conf
+docker/nginx/ssl/*
+!docker/nginx/ssl/.gitkeep
+docker/middleware.env
+docker/docker-compose.override.yaml
+
+sdks/python-client/build
+sdks/python-client/dist
+sdks/python-client/dify_client.egg-info
+
 .vscode/*
 !.vscode/launch.json
 pyrightconfig.json
@@ -160,27 +201,3 @@ api/.vscode
 
 # plugin migrate
 plugins.jsonl
-
-# Logs
-logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-coverage
-*.local
-stats.html
-
-# Editor directories and files
-!.vscode/extensions.json
-.idea
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
