@@ -1,111 +1,74 @@
 <template>
-  <div :class="classObj" class="app-wrapper" :style="{'--current-color': theme}">
-    <div v-if="device==='mobile'&&sidebar.opened" class="drawer-bg" @click="handleClickOutside"/>
-    <sidebar v-if="!sidebar.hide" class="sidebar-container" />
-    <div :class="{hasTagsView:needTagsView,sidebarHide:sidebar.hide}" class="main-container">
-      <div :class="{'fixed-header':fixedHeader}">
-        <navbar />
-        <tags-view v-if="needTagsView" />
-      </div>
-      <app-main />
-      <right-panel>
-        <settings />
-      </right-panel>
-    </div>
-  </div>
+  <n-layout has-sider wh-full>
+    <n-layout-sider
+      bordered
+      collapse-mode="width"
+      :collapsed-width="64"
+      :width="220"
+      :native-scrollbar="false"
+      :collapsed="appStore.collapsed"
+    >
+      <SideBar />
+    </n-layout-sider>
+
+    <article flex-col flex-1 overflow-hidden>
+      <header
+        class="flex items-center border-b bg-white px-15 bc-eee"
+        dark="bg-dark border-0"
+        :style="`height: ${header.height}px`"
+      >
+        <AppHeader />
+      </header>
+      <section v-if="tags.visible" hidden border-b bc-eee sm:block dark:border-0>
+        <AppTags :style="{ height: `${tags.height}px` }" />
+      </section>
+      <section flex-1 overflow-hidden bg-hex-f5f6fb dark:bg-hex-101014>
+        <AppMain />
+      </section>
+    </article>
+  </n-layout>
 </template>
 
-<script>
-import RightPanel from '@/components/RightPanel'
-import { AppMain, Navbar, Settings, Sidebar, TagsView } from './components'
-import ResizeMixin from './mixin/ResizeHandler'
-import { mapState } from 'vuex'
-import variables from '@/assets/styles/variables.scss'
+<script setup>
+import AppHeader from './components/header/index.vue'
+import SideBar from './components/sidebar/index.vue'
+import AppMain from './components/AppMain.vue'
+import AppTags from './components/tags/index.vue'
+import { useAppStore } from '@/store'
+import { header, tags } from '~/settings'
 
-export default {
-  name: 'Layout',
-  components: {
-    AppMain,
-    Navbar,
-    RightPanel,
-    Settings,
-    Sidebar,
-    TagsView
-  },
-  mixins: [ResizeMixin],
-  computed: {
-    ...mapState({
-      theme: state => state.settings.theme,
-      sideTheme: state => state.settings.sideTheme,
-      sidebar: state => state.app.sidebar,
-      device: state => state.app.device,
-      needTagsView: state => state.settings.tagsView,
-      fixedHeader: state => state.settings.fixedHeader
-    }),
-    classObj() {
-      return {
-        hideSidebar: !this.sidebar.opened,
-        openSidebar: this.sidebar.opened,
-        withoutAnimation: this.sidebar.withoutAnimation,
-        mobile: this.device === 'mobile'
-      }
-    },
-    variables() {
-      return variables;
-    }
-  },
-  methods: {
-    handleClickOutside() {
-      this.$store.dispatch('app/closeSideBar', { withoutAnimation: false })
-    }
-  }
+// 移动端适配
+import { useBreakpoints } from '@vueuse/core'
+
+const appStore = useAppStore()
+const breakpointsEnum = {
+  xl: 1600,
+  lg: 1199,
+  md: 991,
+  sm: 666,
+  xs: 575,
 }
+const breakpoints = reactive(useBreakpoints(breakpointsEnum))
+const isMobile = breakpoints.smaller('sm')
+const isPad = breakpoints.between('sm', 'md')
+const isPC = breakpoints.greater('md')
+watchEffect(() => {
+  if (isMobile.value) {
+    // Mobile
+    appStore.setCollapsed(true)
+    appStore.setFullScreen(false)
+  }
+
+  if (isPad.value) {
+    // IPad
+    appStore.setCollapsed(true)
+    appStore.setFullScreen(false)
+  }
+
+  if (isPC.value) {
+    // PC
+    appStore.setCollapsed(false)
+    appStore.setFullScreen(true)
+  }
+})
 </script>
-
-<style lang="scss" scoped>
-  @import "~@/assets/styles/mixin.scss";
-  @import "~@/assets/styles/variables.scss";
-
-  .app-wrapper {
-    @include clearfix;
-    position: relative;
-    height: 100%;
-    width: 100%;
-
-    &.mobile.openSidebar {
-      position: fixed;
-      top: 0;
-    }
-  }
-
-  .drawer-bg {
-    background: #000;
-    opacity: 0.3;
-    width: 100%;
-    top: 0;
-    height: 100%;
-    position: absolute;
-    z-index: 999;
-  }
-
-  .fixed-header {
-    position: fixed;
-    top: 0;
-    right: 0;
-    z-index: 9;
-    width: calc(100% - #{$base-sidebar-width});
-    transition: width 0.28s;
-  }
-
-  .hideSidebar .fixed-header {
-    width: calc(100% - 54px);
-  }
-
-  .sidebarHide .fixed-header {
-    width: 100%;
-  }
-
-  .mobile .fixed-header {
-    width: 100%;
-  }
-</style>

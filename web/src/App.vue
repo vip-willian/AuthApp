@@ -1,19 +1,11 @@
 <template>
-  <div id="app">
-    <router-view />
-  </div>
+  <AppProvider>
+    <router-view v-slot="{ Component }">
+      <component :is="Component" />
+    </router-view>
+  </AppProvider>
 </template>
 
-<script>
-export default  {
-  name:  'App',
-    metaInfo() {
-        return {
-            title: this.$store.state.settings.dynamicTitle && this.$store.state.settings.title,
-            titleTemplate: title => {
-                return title ? `${title} - ${process.env.VUE_APP_TITLE}` : process.env.VUE_APP_TITLE
-            }
-        }
-    }
-}
+<script setup>
+import AppProvider from '@/components/common/AppProvider.vue'
 </script>

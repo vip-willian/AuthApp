@@ -12,12 +12,14 @@ def create_app_with_config() -> AuthApp:
 
 
 def initialize_extensions(app: AuthApp):
-    from extensions import ext_blueprints, ext_database, ext_redis
+    from extensions import ext_blueprints, ext_database, ext_redis, ext_login, ext_logging
 
     extensions = [
         ext_blueprints,
         ext_database,
-        ext_redis
+        ext_redis,
+        ext_login,
+        ext_logging
     ]
 
     for ext in extensions:

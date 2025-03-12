@@ -29,7 +29,7 @@ def init_app(app: AuthApp):
     logging.basicConfig(
         level=auth_config.LOG_LEVEL,
         format=auth_config.LOG_FORMAT,
-        datefmt=auth_config.LOG_DATE_FORMAT,
+        datefmt=auth_config.LOG_DATEFORMAT,
         handlers=log_handlers,
         force=True,
     )

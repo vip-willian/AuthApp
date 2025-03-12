@@ -1,453 +1,360 @@
-<template>
-  <div class="app-container">
-    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch">
-      <el-form-item label="菜单名称" prop="menuName">
-        <el-input
-          v-model="queryParams.menuName"
-          placeholder="请输入菜单名称"
-          clearable
-          @keyup.enter.native="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="状态" prop="status">
-        <el-select v-model="queryParams.status" placeholder="菜单状态" clearable>
-          <el-option
-            v-for="dict in dict.type.sys_normal_disable"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
+<script setup>
+import { h, onMounted, ref, resolveDirective, withDirectives } from 'vue'
+import {
+  NButton,
+  NForm,
+  NFormItem,
+  NInput,
+  NInputNumber,
+  NPopconfirm,
+  NSwitch,
+  NTreeSelect,
+  NRadio,
+  NRadioGroup,
+  NTag,
+} from 'naive-ui'
 
-    <el-row :gutter="10" class="mb8">
-      <el-col :span="1.5">
-        <el-button
-          type="primary"
-          plain
-          icon="el-icon-plus"
-          size="mini"
-          @click="handleAdd"
-          v-hasPermi="['system:menu:add']"
-        >新增</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="info"
-          plain
-          icon="el-icon-sort"
-          size="mini"
-          @click="toggleExpandAll"
-        >展开/折叠</el-button>
-      </el-col>
-      <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
-    </el-row>
+import CommonPage from '@/components/page/CommonPage.vue'
+import CrudModal from '@/components/table/CrudModal.vue'
+import CrudTable from '@/components/table/CrudTable.vue'
+import IconPicker from '@/components/icon/IconPicker.vue'
+import TheIcon from '@/components/icon/TheIcon.vue'
 
-    <el-table
-      v-if="refreshTable"
-      v-loading="loading"
-      :data="menuList"
-      row-key="menuId"
-      :default-expand-all="isExpandAll"
-      :tree-props="{children: 'children', hasChildren: 'hasChildren'}"
-    >
-      <el-table-column prop="menuName" label="菜单名称" :show-overflow-tooltip="true" width="160"></el-table-column>
-      <el-table-column prop="icon" label="图标" align="center" width="100">
-        <template slot-scope="scope">
-          <svg-icon :icon-class="scope.row.icon" />
-        </template>
-      </el-table-column>
-      <el-table-column prop="orderNum" label="排序" width="60"></el-table-column>
-      <el-table-column prop="perms" label="权限标识" :show-overflow-tooltip="true"></el-table-column>
-      <el-table-column prop="component" label="组件路径" :show-overflow-tooltip="true"></el-table-column>
-      <el-table-column prop="status" label="状态" width="80">
-        <template slot-scope="scope">
-          <dict-tag :options="dict.type.sys_normal_disable" :value="scope.row.status"/>
-        </template>
-      </el-table-column>
-      <el-table-column label="创建时间" align="center" prop="createTime">
-        <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.createTime) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
-        <template slot-scope="scope">
-          <el-button 
-            size="mini"
-            type="text"
-            icon="el-icon-edit"
-            @click="handleUpdate(scope.row)"
-            v-hasPermi="['system:menu:edit']"
-          >修改</el-button>
-          <el-button
-            size="mini"
-            type="text"
-            icon="el-icon-plus"
-            @click="handleAdd(scope.row)"
-            v-hasPermi="['system:menu:add']"
-          >新增</el-button>
-          <el-button
-            size="mini"
-            type="text"
-            icon="el-icon-delete"
-            @click="handleDelete(scope.row)"
-            v-hasPermi="['system:menu:remove']"
-          >删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+import { formatDate, renderIcon } from '@/utils'
+import { useCRUD } from '@/composables'
+import api from '@/api'
 
-    <!-- 添加或修改菜单对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="680px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="100px">
-        <el-row>
-          <el-col :span="24">
-            <el-form-item label="上级菜单">
-              <treeselect
-                v-model="form.parentId"
-                :options="menuOptions"
-                :normalizer="normalizer"
-                :show-count="true"
-                placeholder="选择上级菜单"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="菜单类型" prop="menuType">
-              <el-radio-group v-model="form.menuType">
-                <el-radio label="M">目录</el-radio>
-                <el-radio label="C">菜单</el-radio>
-                <el-radio label="F">按钮</el-radio>
-              </el-radio-group>
-            </el-form-item>
-          </el-col>
-          <el-col :span="24" v-if="form.menuType != 'F'">
-            <el-form-item label="菜单图标" prop="icon">
-              <el-popover
-                placement="bottom-start"
-                width="460"
-                trigger="click"
-                @show="$refs['iconSelect'].reset()"
-              >
-                <IconSelect ref="iconSelect" @selected="selected" />
-                <el-input slot="reference" v-model="form.icon" placeholder="点击选择图标" readonly>
-                  <svg-icon
-                    v-if="form.icon"
-                    slot="prefix"
-                    :icon-class="form.icon"
-                    class="el-input__icon"
-                    style="height: 32px;width: 16px;"
-                  />
-                  <i v-else slot="prefix" class="el-icon-search el-input__icon" />
-                </el-input>
-              </el-popover>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="菜单名称" prop="menuName">
-              <el-input v-model="form.menuName" placeholder="请输入菜单名称" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="显示排序" prop="orderNum">
-              <el-input-number v-model="form.orderNum" controls-position="right" :min="0" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12" v-if="form.menuType != 'F'">
-            <el-form-item>
-              <span slot="label">
-                <el-tooltip content="选择是外链则路由地址需要以`http(s)://`开头" placement="top">
-                <i class="el-icon-question"></i>
-                </el-tooltip>
-                是否外链
-              </span>
-              <el-radio-group v-model="form.isFrame">
-                <el-radio label="0">是</el-radio>
-                <el-radio label="1">否</el-radio>
-              </el-radio-group>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12" v-if="form.menuType != 'F'">
-            <el-form-item prop="path">
-              <span slot="label">
-                <el-tooltip content="访问的路由地址，如：`user`，如外网地址需内链访问则以`http(s)://`开头" placement="top">
-                <i class="el-icon-question"></i>
-                </el-tooltip>
-                路由地址
-              </span>
-              <el-input v-model="form.path" placeholder="请输入路由地址" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12" v-if="form.menuType == 'C'">
-            <el-form-item prop="component">
-              <span slot="label">
-                <el-tooltip content="访问的组件路径，如：`system/user/index`，默认在`views`目录下" placement="top">
-                <i class="el-icon-question"></i>
-                </el-tooltip>
-                组件路径
-              </span>
-              <el-input v-model="form.component" placeholder="请输入组件路径" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12" v-if="form.menuType != 'M'">
-            <el-form-item>
-              <el-input v-model="form.perms" placeholder="请输入权限标识" maxlength="100" />
-              <span slot="label">
-                <el-tooltip content="控制器中定义的权限字符，如：@PreAuthorize(`@ss.hasPermi('system:user:list')`)" placement="top">
-                <i class="el-icon-question"></i>
-                </el-tooltip>
-                权限字符
-              </span>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12" v-if="form.menuType == 'C'">
-            <el-form-item>
-              <el-input v-model="form.query" placeholder="请输入路由参数" maxlength="255" />
-              <span slot="label">
-                <el-tooltip content='访问路由的默认传递参数，如：`{"id": 1, "name": "ry"}`' placement="top">
-                <i class="el-icon-question"></i>
-                </el-tooltip>
-                路由参数
-              </span>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12" v-if="form.menuType == 'C'">
-            <el-form-item>
-              <span slot="label">
-                <el-tooltip content="选择是则会被`keep-alive`缓存，需要匹配组件的`name`和地址保持一致" placement="top">
-                <i class="el-icon-question"></i>
-                </el-tooltip>
-                是否缓存
-              </span>
-              <el-radio-group v-model="form.isCache">
-                <el-radio label="0">缓存</el-radio>
-                <el-radio label="1">不缓存</el-radio>
-              </el-radio-group>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12" v-if="form.menuType != 'F'">
-            <el-form-item>
-              <span slot="label">
-                <el-tooltip content="选择隐藏则路由将不会出现在侧边栏，但仍然可以访问" placement="top">
-                <i class="el-icon-question"></i>
-                </el-tooltip>
-                显示状态
-              </span>
-              <el-radio-group v-model="form.visible">
-                <el-radio
-                  v-for="dict in dict.type.sys_show_hide"
-                  :key="dict.value"
-                  :label="dict.value"
-                >{{dict.label}}</el-radio>
-              </el-radio-group>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12" v-if="form.menuType != 'F'">
-            <el-form-item>
-              <span slot="label">
-                <el-tooltip content="选择停用则路由将不会出现在侧边栏，也不能被访问" placement="top">
-                <i class="el-icon-question"></i>
-                </el-tooltip>
-                菜单状态
-              </span>
-              <el-radio-group v-model="form.status">
-                <el-radio
-                  v-for="dict in dict.type.sys_normal_disable"
-                  :key="dict.value"
-                  :label="dict.value"
-                >{{dict.label}}</el-radio>
-              </el-radio-group>
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
-      </div>
-    </el-dialog>
-  </div>
-</template>
+defineOptions({ name: '菜单管理' })
 
-<script>
-import { listMenu, getMenu, delMenu, addMenu, updateMenu } from "@/api/system/menu";
-import Treeselect from "@riophae/vue-treeselect";
-import "@riophae/vue-treeselect/dist/vue-treeselect.css";
-import IconSelect from "@/components/IconSelect";
+const $table = ref(null)
+const queryItems = ref({})
+const vPermission = resolveDirective('permission')
 
-export default {
-  name: "Menu",
-  dicts: ['sys_show_hide', 'sys_normal_disable'],
-  components: { Treeselect, IconSelect },
-  data() {
-    return {
-      // 遮罩层
-      loading: true,
-      // 显示搜索条件
-      showSearch: true,
-      // 菜单表格树数据
-      menuList: [],
-      // 菜单树选项
-      menuOptions: [],
-      // 弹出层标题
-      title: "",
-      // 是否显示弹出层
-      open: false,
-      // 是否展开，默认全部折叠
-      isExpandAll: false,
-      // 重新渲染表格状态
-      refreshTable: true,
-      // 查询参数
-      queryParams: {
-        menuName: undefined,
-        visible: undefined
-      },
-      // 表单参数
-      form: {},
-      // 表单校验
-      rules: {
-        menuName: [
-          { required: true, message: "菜单名称不能为空", trigger: "blur" }
-        ],
-        orderNum: [
-          { required: true, message: "菜单顺序不能为空", trigger: "blur" }
-        ],
-        path: [
-          { required: true, message: "路由地址不能为空", trigger: "blur" }
-        ]
+// 表单初始化内容
+const initForm = {
+  order: 1,
+  keepalive: true,
+}
+
+const {
+  modalVisible,
+  modalTitle,
+  modalLoading,
+  handleAdd,
+  handleDelete,
+  handleEdit,
+  handleSave,
+  modalForm,
+  modalFormRef,
+} = useCRUD({
+  name: '菜单',
+  initForm,
+  doCreate: api.createMenu,
+  doDelete: api.deleteMenu,
+  doUpdate: api.updateMenu,
+  refresh: () => $table.value?.handleSearch(),
+})
+
+onMounted(() => {
+  $table.value?.handleSearch()
+  getTreeSelect()
+})
+
+// 是否展示 "菜单类型"
+const showMenuType = ref(false)
+const menuOptions = ref([])
+
+const columns = [
+  { title: 'ID', key: 'id', width: 50, ellipsis: { tooltip: true }, align: 'center' },
+  { title: '菜单名称', key: 'name', width: 80, ellipsis: { tooltip: true }, align: 'center' },
+  {
+    title: '菜单类型',
+    key: 'menu_type',
+    width: 80,
+    align: 'center',
+    ellipsis: { tooltip: true },
+    render(row) {
+      let round = false
+      let bordered = false
+      if (row.menu_type === 'catalog') {
+        bordered = true
+        round = false
+      } else if (row.menu_type === 'menu') {
+        bordered = false
+        round = true
       }
-    };
+      return h(
+        NTag,
+        { type: 'primary', round: round, bordered: bordered },
+        { default: () => (row.menu_type === 'catalog' ? '目录' : '菜单') }
+      )
+    },
   },
-  created() {
-    this.getList();
+  {
+    title: '图标',
+    key: 'icon',
+    width: 40,
+    align: 'center',
+    render(row) {
+      return h(TheIcon, { icon: row.icon, size: 20 })
+    },
   },
-  methods: {
-    // 选择图标
-    selected(name) {
-      this.form.icon = name;
+  { title: '排序', key: 'order', width: 40, ellipsis: { tooltip: true }, align: 'center' },
+  { title: '访问路径', key: 'path', width: 80, ellipsis: { tooltip: true }, align: 'center' },
+  { title: '跳转路径', key: 'redirect', width: 80, ellipsis: { tooltip: true }, align: 'center' },
+  { title: '组件路径', key: 'component', width: 80, ellipsis: { tooltip: true }, align: 'center' },
+  {
+    title: '保活',
+    key: 'keepalive',
+    width: 40,
+    align: 'center',
+    render(row) {
+      return h(NSwitch, {
+        size: 'small',
+        rubberBand: false,
+        value: row.keepalive,
+        onUpdateValue: () => handleUpdateKeepalive(row),
+      })
     },
-    /** 查询菜单列表 */
-    getList() {
-      this.loading = true;
-      listMenu(this.queryParams).then(response => {
-        this.menuList = this.handleTree(response.data, "menuId");
-        this.loading = false;
-      });
+  },
+  {
+    title: '隐藏',
+    key: 'is_hidden',
+    width: 40,
+    align: 'center',
+    render(row) {
+      return h(NSwitch, {
+        size: 'small',
+        rubberBand: false,
+        value: row.is_hidden,
+        onUpdateValue: () => handleUpdateHidden(row),
+      })
     },
-    /** 转换菜单数据结构 */
-    normalizer(node) {
-      if (node.children && !node.children.length) {
-        delete node.children;
-      }
-      return {
-        id: node.menuId,
-        label: node.menuName,
-        children: node.children
-      };
+  },
+  {
+    title: '创建日期',
+    key: 'created_at',
+    width: 80,
+    align: 'center',
+    render(row) {
+      return h('span', formatDate(row.created_at))
     },
-    /** 查询菜单下拉树结构 */
-    getTreeselect() {
-      listMenu().then(response => {
-        this.menuOptions = [];
-        const menu = { menuId: 0, menuName: '主类目', children: [] };
-        menu.children = this.handleTree(response.data, "menuId");
-        this.menuOptions.push(menu);
-      });
-    },
-    // 取消按钮
-    cancel() {
-      this.open = false;
-      this.reset();
-    },
-    // 表单重置
-    reset() {
-      this.form = {
-        menuId: undefined,
-        parentId: 0,
-        menuName: undefined,
-        icon: undefined,
-        menuType: "M",
-        orderNum: undefined,
-        isFrame: "1",
-        isCache: "0",
-        visible: "0",
-        status: "0"
-      };
-      this.resetForm("form");
-    },
-    /** 搜索按钮操作 */
-    handleQuery() {
-      this.getList();
-    },
-    /** 重置按钮操作 */
-    resetQuery() {
-      this.resetForm("queryForm");
-      this.handleQuery();
-    },
-    /** 新增按钮操作 */
-    handleAdd(row) {
-      this.reset();
-      this.getTreeselect();
-      if (row != null && row.menuId) {
-        this.form.parentId = row.menuId;
-      } else {
-        this.form.parentId = 0;
-      }
-      this.open = true;
-      this.title = "添加菜单";
-    },
-    /** 展开/折叠操作 */
-    toggleExpandAll() {
-      this.refreshTable = false;
-      this.isExpandAll = !this.isExpandAll;
-      this.$nextTick(() => {
-        this.refreshTable = true;
-      });
-    },
-    /** 修改按钮操作 */
-    handleUpdate(row) {
-      this.reset();
-      this.getTreeselect();
-      getMenu(row.menuId).then(response => {
-        this.form = response.data;
-        this.open = true;
-        this.title = "修改菜单";
-      });
-    },
-    /** 提交按钮 */
-    submitForm: function() {
-      this.$refs["form"].validate(valid => {
-        if (valid) {
-          if (this.form.menuId != undefined) {
-            updateMenu(this.form).then(response => {
-              this.$modal.msgSuccess("修改成功");
-              this.open = false;
-              this.getList();
-            });
-          } else {
-            addMenu(this.form).then(response => {
-              this.$modal.msgSuccess("新增成功");
-              this.open = false;
-              this.getList();
-            });
+  },
+  {
+    title: '操作',
+    key: 'actions',
+    width: 120,
+    align: 'center',
+    fixed: 'right',
+    render(row) {
+      return [
+        withDirectives(
+          h(
+            NButton,
+            {
+              size: 'tiny',
+              quaternary: true,
+              type: 'primary',
+              style: `display: ${row.children && row.menu_type !== 'menu' ? '' : 'none'};`,
+              onClick: () => {
+                initForm.parent_id = row.id
+                initForm.menu_type = 'menu'
+                showMenuType.value = false
+                handleAdd()
+              },
+            },
+            { default: () => '子菜单', icon: renderIcon('material-symbols:add', { size: 16 }) }
+          ),
+          [[vPermission, 'post/api/v1/menu/create']]
+        ),
+        withDirectives(
+          h(
+            NButton,
+            {
+              size: 'tiny',
+              quaternary: true,
+              type: 'info',
+              onClick: () => {
+                showMenuType.value = false
+                handleEdit(row)
+              },
+            },
+            {
+              default: () => '编辑',
+              icon: renderIcon('material-symbols:edit-outline', { size: 16 }),
+            }
+          ),
+          [[vPermission, 'post/api/v1/menu/update']]
+        ),
+        h(
+          NPopconfirm,
+          {
+            onPositiveClick: () => handleDelete({ id: row.id }, false),
+          },
+          {
+            trigger: () =>
+              withDirectives(
+                h(
+                  NButton,
+                  {
+                    size: 'tiny',
+                    quaternary: true,
+                    type: 'error',
+                    style: `display: ${row.children && row.children.length > 0 ? 'none' : ''};`, //有子菜单不允许删除
+                  },
+                  {
+                    default: () => '删除',
+                    icon: renderIcon('material-symbols:delete-outline', { size: 16 }),
+                  }
+                ),
+                [[vPermission, 'delete/api/v1/menu/delete']]
+              ),
+            default: () => h('div', {}, '确定删除该菜单吗?'),
           }
-        }
-      });
+        ),
+      ]
     },
-    /** 删除按钮操作 */
-    handleDelete(row) {
-      this.$modal.confirm('是否确认删除名称为"' + row.menuName + '"的数据项？').then(function() {
-        return delMenu(row.menuId);
-      }).then(() => {
-        this.getList();
-        this.$modal.msgSuccess("删除成功");
-      }).catch(() => {});
-    }
-  }
-};
+  },
+]
+// 修改是否keepalive
+async function handleUpdateKeepalive(row) {
+  if (!row.id) return
+  row.publishing = true
+  row.keepalive = row.keepalive === false ? true : false
+  await api.updateMenu(row)
+  row.publishing = false
+  $message?.success(row.keepalive ? '已开启' : '已关闭')
+}
+
+// 修改是否隐藏
+async function handleUpdateHidden(row) {
+  if (!row.id) return
+  row.publishing = true
+  row.is_hidden = row.is_hidden === false ? true : false
+  await api.updateMenu(row)
+  row.publishing = false
+  $message?.success(row.is_hidden ? '已隐藏' : '已取消隐藏')
+}
+
+// 新增菜单(可选目录)
+function handleClickAdd() {
+  initForm.parent_id = 0
+  initForm.menu_type = 'catalog'
+  initForm.is_hidden = false
+  initForm.order = 1
+  initForm.keepalive = true
+  showMenuType.value = true
+  handleAdd()
+}
+
+async function getTreeSelect() {
+  const { data } = await api.getMenus()
+  const menu = { id: 0, name: '根目录', children: [] }
+  menu.children = data
+  menuOptions.value = [menu]
+}
 </script>
+
+<template>
+  <!-- 业务页面 -->
+  <CommonPage show-footer title="菜单列表">
+    <template #action>
+      <NButton v-permission="'post/api/v1/menu/create'" type="primary" @click="handleClickAdd">
+        <TheIcon icon="material-symbols:add" :size="18" class="mr-5" />新建根菜单
+      </NButton>
+    </template>
+
+    <!-- 表格 -->
+    <CrudTable
+      ref="$table"
+      v-model:query-items="queryItems"
+      :is-pagination="false"
+      :columns="columns"
+      :get-data="api.getMenus"
+      :single-line="true"
+    >
+    </CrudTable>
+
+    <!-- 新增/编辑/查看 弹窗 -->
+    <CrudModal
+      v-model:visible="modalVisible"
+      :title="modalTitle"
+      :loading="modalLoading"
+      @save="handleSave(getTreeSelect)"
+    >
+      <!-- 表单 -->
+      <NForm
+        ref="modalFormRef"
+        label-placement="left"
+        label-align="left"
+        :label-width="80"
+        :model="modalForm"
+      >
+        <NFormItem label="菜单类型" path="menu_type">
+          <NRadioGroup v-model:value="modalForm.menu_type">
+            <NRadio label="目录" value="catalog" />
+            <NRadio label="菜单" value="menu" />
+          </NRadioGroup>
+        </NFormItem>
+        <NFormItem label="上级菜单" path="parent_id">
+          <NTreeSelect
+            v-model:value="modalForm.parent_id"
+            key-field="id"
+            label-field="name"
+            :options="menuOptions"
+            default-expand-all="true"
+          />
+        </NFormItem>
+        <NFormItem
+          label="菜单名称"
+          path="name"
+          :rule="{
+            required: true,
+            message: '请输入唯一菜单名称',
+            trigger: ['input', 'blur'],
+          }"
+        >
+          <NInput v-model:value="modalForm.name" placeholder="请输入唯一菜单名称" />
+        </NFormItem>
+        <NFormItem
+          label="访问路径"
+          path="path"
+          :rule="{
+            required: true,
+            message: '请输入访问路径',
+            trigger: ['blur'],
+          }"
+        >
+          <NInput v-model:value="modalForm.path" placeholder="请输入访问路径" />
+        </NFormItem>
+        <NFormItem v-if="modalForm.menu_type === 'menu'" label="组件路径" path="component">
+          <NInput
+            v-model:value="modalForm.component"
+            placeholder="请输入组件路径，例如：/system/user"
+          />
+        </NFormItem>
+        <NFormItem label="跳转路径" path="redirect">
+          <NInput
+            v-model:value="modalForm.redirect"
+            :disabled="modalForm.parent_id !== 0"
+            :placeholder="
+              modalForm.parent_id !== 0 ? '只有一级菜单可以设置跳转路径' : '请输入跳转路径'
+            "
+          />
+        </NFormItem>
+        <NFormItem label="菜单图标" path="icon">
+          <IconPicker v-model:value="modalForm.icon" />
+        </NFormItem>
+        <NFormItem label="显示排序" path="order">
+          <NInputNumber v-model:value="modalForm.order" :min="1" />
+        </NFormItem>
+        <NFormItem label="是否隐藏" path="is_hidden">
+          <NSwitch v-model:value="modalForm.is_hidden" />
+        </NFormItem>
+        <NFormItem label="KeepAlive" path="keepalive">
+          <NSwitch v-model:value="modalForm.keepalive" />
+        </NFormItem>
+      </NForm>
+    </CrudModal>
+  </CommonPage>
+</template>

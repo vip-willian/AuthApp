@@ -1,13 +1,13 @@
 from .base import BaseServiceError
 
 
-class AccountNotFoundError(BaseServiceError):
+class UserNotFoundError(BaseServiceError):
     pass
 
 
-class AccountLoginError(BaseServiceError):
+class UserLoginError(BaseServiceError):
     pass
 
 
-class AccountPasswordError(BaseServiceError):
+class UserPasswordError(BaseServiceError):
     pass

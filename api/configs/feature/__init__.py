@@ -11,6 +11,11 @@ class SecurityConfig(BaseSettings):
         default="",
     )
 
+    LOGIN_DISABLED: bool = Field(
+        description="Whether to disable login checks",
+        default=False,
+    )
+
 
 class AuthConfig(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: PositiveInt = Field(

@@ -1,17 +1,17 @@
 from libs.exception import BaseHTTPException
 
 
-class AccountBannedError(BaseHTTPException):
-    error_code = "account_banned"
-    description = "Account is banned."
+class UserBannedError(BaseHTTPException):
+    error_code = "user_banned"
+    description = "User is banned."
     code = 400
 
-class AccountNotFound(BaseHTTPException):
-    error_code = "account_not_found"
-    description = "Account not found."
+class UserNotFound(BaseHTTPException):
+    error_code = "user_not_found"
+    description = "User not found."
     code = 400
 
-class EmailOrPasswordMismatchError(BaseHTTPException):
-    error_code = "email_or_password_mismatch"
-    description = "The email or password is mismatched."
+class UserNameOrPasswordMismatchError(BaseHTTPException):
+    error_code = "username_or_password_mismatch"
+    description = "The username or password is mismatched."
     code = 400

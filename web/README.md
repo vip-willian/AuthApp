@@ -1,30 +1,20 @@
-## 开发
+## 快速开始
 
-```bash
-# 克隆项目
-git clone https://gitee.com/zhujf21st/authbase
+进入前端目录
 
-# 进入项目目录
-cd ui
-
-# 安装依赖
-npm install
-
-# 建议不要直接使用 cnpm 安装依赖，会有各种诡异的 bug。可以通过如下操作解决 npm 下载速度慢的问题
-npm install --registry=https://registry.npmmirror.com
-
-# 启动服务
-npm run dev
+```sh
+cd web
 ```
 
-浏览器访问 http://localhost:80
+安装依赖(建议使用pnpm: https://pnpm.io/zh/installation)
 
-## 发布
+```sh
+npm i -g pnpm # 已安装可忽略
+pnpm i # 或者 npm i
+```
 
-```bash
-# 构建测试环境
-npm run build:stage
+启动
 
-# 构建生产环境
-npm run build:prod
+```sh
+pnpm dev
 ```
