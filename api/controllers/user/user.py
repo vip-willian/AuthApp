@@ -1,6 +1,19 @@
-from flask import jsonify
+import flask_login
+import json
 from flask_restful import Resource, reqparse, inputs, marshal, fields
 from libs.field_validate import field_len_limit
+from flask_login import login_required
+from typing import cast
+from models.user import User
+from services.user_service import UserService
+
+
+class GetUserMenusApi(Resource):
+
+    @login_required
+    def get(self):
+        user = cast(User, flask_login.current_user)
+        return {"code": 200, "message": "ok", "data": UserService.get_user_menus(user=user)}
 
 
 class GetUserList(Resource):

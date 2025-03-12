@@ -1,8 +1,7 @@
-from models import db as sql
-import sqlalchemy as db
 import enum
+from .engine import db
 from flask_login import UserMixin
-
+from models.base import BaseModel
 
 class UserStatus(enum.StrEnum):
     PENDING = "pending"
@@ -17,7 +16,24 @@ class MenuType(enum.StrEnum):
     MENU = "menu"  # 菜单
 
 
-class User(sql.Model, UserMixin):
+class UserRole(BaseModel):
+    __tablename__ = 'sys_user_role'
+    __table_args__ = {
+        "mysql_charset": "utf8",
+        'comment': '用户角色关联表'
+    }
+
+    id = db.Column(db.BigInteger, primary_key=True, comment='主键ID')
+    user_id = db.Column(db.BigInteger, nullable=False, comment='用户ID')
+    role_id = db.Column(db.BigInteger, nullable=False, comment='角色ID')
+    created_time = db.Column(db.DateTime, nullable=False, server_default=db.func.current_timestamp(),
+                             comment='创建时间')
+    updated_time = db.Column(db.DateTime, nullable=False, server_default=db.func.current_timestamp(),
+                             comment='更新时间')
+    db.UniqueConstraint('user_id', 'role_id', name='uk_user_role_id')
+
+
+class User(BaseModel, UserMixin):
     __tablename__ = 'sys_user'
     __table_args__ = {
         "mysql_charset": "utf8",
@@ -51,7 +67,17 @@ class User(sql.Model, UserMixin):
     def is_active(self):
         return UserStatus.ACTIVE.value == self.user_status
 
-class Role(sql.Model):
+    @property
+    def get_role_ids(self) -> list[int]:
+        user_roles = (
+            db.session.query(UserRole).filter(UserRole.user_id == self.id).all()
+        )
+        if not user_roles or len(user_roles) == 0:
+            return []
+        return [x.role_id for x in user_roles]
+
+
+class Role(BaseModel):
     __tablename__ = 'sys_role'
     __table_args__ = {
         "mysql_charset": "utf8",
@@ -66,7 +92,7 @@ class Role(sql.Model):
                              comment='更新时间')
 
 
-class Dept(sql.Model):
+class Dept(BaseModel):
     __tablename__ = 'sys_dept'
     __table_args__ = {
         "mysql_charset": "utf8",
@@ -84,7 +110,7 @@ class Dept(sql.Model):
                              comment='更新时间')
 
 
-class Organization(sql.Model):
+class Organization(BaseModel):
     __tablename__ = 'sys_organization'
     __table_args__ = {
         "mysql_charset": "utf8",
@@ -103,7 +129,7 @@ class Organization(sql.Model):
                              comment='更新时间')
 
 
-class Menu(sql.Model):
+class Menu(BaseModel):
     __tablename__ = 'sys_menu'
     __table_args__ = {
         "mysql_charset": "utf8",
@@ -126,25 +152,28 @@ class Menu(sql.Model):
     updated_time = db.Column(db.DateTime, nullable=False, server_default=db.func.current_timestamp(),
                              comment='更新时间')
 
+    def keys(self):
+        '''当对实例化对象使用dict(obj)的时候, 会调用这个方法,这里定义了字典的键, 其对应的值将以obj['name']的形式取,
+        但是对象是不可以以这种方式取值的, 为了支持这种取值, 可以为类增加一个方法'''
+        return ('id', 'parent_id', 'name','menu_type','icon','path','order','remark','is_hidden','component','keepalive','redirect')
 
-class UserRole(sql.Model):
-    __tablename__ = 'sys_user_role'
-    __table_args__ = {
-        "mysql_charset": "utf8",
-        'comment': '用户角色关联表'
-    }
+    def __getitem__(self, item):
+        '''内置方法, 当使用obj['name']的形式的时候, 将调用这个方法, 这里返回的结果就是值'''
+        return getattr(self, item)
 
-    id = db.Column(db.BigInteger, primary_key=True, comment='主键ID')
-    user_id = db.Column(db.BigInteger, nullable=False, comment='用户ID')
-    role_id = db.Column(db.BigInteger, nullable=False, comment='角色ID')
-    created_time = db.Column(db.DateTime, nullable=False, server_default=db.func.current_timestamp(),
-                             comment='创建时间')
-    updated_time = db.Column(db.DateTime, nullable=False, server_default=db.func.current_timestamp(),
-                             comment='更新时间')
-    db.UniqueConstraint('user_id', 'role_id', name='uk_user_role_id')
+    @staticmethod
+    def get_menus(menu_ids):
+        if menu_ids and len(menu_ids) != 0:
+            menus = (
+                db.session.query(Menu).filter(Menu.id.in_(menu_ids)).all()
+            )
+            if not menus:
+                return []
+            return menus
+        return []
 
 
-class RoleMenu(sql.Model):
+class RoleMenu(BaseModel):
     __tablename__ = 'sys_role_menu'
     __table_args__ = {
         "mysql_charset": "utf8",
@@ -159,3 +188,15 @@ class RoleMenu(sql.Model):
     updated_time = db.Column(db.DateTime, nullable=False, server_default=db.func.current_timestamp(),
                              comment='更新时间')
     db.UniqueConstraint('role_id', 'menu_id', name='uk_role_menu_id')
+
+    @staticmethod
+    def get_menus_ids(role_ids: list[int]) -> list[int]:
+
+        if role_ids and len(role_ids) != 0:
+            role_menus = (
+                db.session.query(RoleMenu).filter(RoleMenu.role_id.in_(role_ids)).all()
+            )
+            if not role_menus:
+                return []
+            return [x.menu_id for x in role_menus]
+        return []

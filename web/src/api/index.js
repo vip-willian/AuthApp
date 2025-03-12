@@ -3,7 +3,7 @@ import { request } from '@/utils'
 export default {
   login: (data) => request.post('/auth/login', data, { noNeedToken: true }),
   getUserInfo: () => request.get('/auth/profile'),
-  getUserMenu: () => request.get('/base/usermenu'),
+  getUserMenu: () => request.get('/user/menu'),
   getUserApi: () => request.get('/base/userapi'),
   // profile
   updatePassword: (data = {}) => request.post('/base/update_password', data),
