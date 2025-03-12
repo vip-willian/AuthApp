@@ -139,7 +139,6 @@ web/.vscode/settings.json
 *.iml
 api/.idea
 
-api/.env
 api/storage/*
 
 docker-legacy/volumes/app/storage/*
